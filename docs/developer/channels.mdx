@@ -1,0 +1,269 @@
+---
+title: Channel management
+sidebar_label: Channels
+---
+
+import GraphQL from "@site/components/GraphQL";
+
+## Introduction
+
+Since version 3.0 Saleor supports multichannel. This feature allows the shop owner for configuring many aspects of the store depending on a channel.
+
+- Your store need at least one channel to display products
+- You can add as many channels as you need
+- Each channel have exactly one currency
+- Channels can be deactivated
+
+Popular use cases:
+- If you sell internationally, you can use separate channels for different currencies or regions
+- If you want to have different prices in the custom mobile app and website, you can set up website-channel and mobile-channel
+
+There are many models which can be customized per Channel. Details which fields can be defined on per-channel basis are defined in ChannelListing models:
+- [Collection](categories-and-collections.mdx#collectionchannellisting) 
+- [Product](products.mdx#productchannellisting)
+- [ProductVariant](products.mdx#productvariantchannellisting)
+- [Sale](discounts.mdx#salechannellisting)
+- [ShippingMethod](shipping.mdx#shippingmethodchannellisting)
+- [Voucher](discounts.mdx#voucherchannellisting)
+
+
+## Permissions
+
+To list, create, edit, remove, or deactivate channel `MANAGE_CHANNELS` permission is required.
+To edit for example Product availability in Channel, no additional permission besides `MANAGE_PRODUCTS` is needed.
+
+
+# Api Reference
+
+## Models
+
+### Channel
+```graphql
+type Channel implements Node {
+  id: ID!
+  name: String!
+  isActive: Boolean!
+  slug: String!
+  currencyCode: String!
+  hasOrders: Boolean!
+}
+```
+
+- `id`: Channel object ID
+- `name`: Channel name
+- `isActive`: Flag which changes if channel is available for shop customers
+- `slug`: When using channel depending queries, slug is used for selecting right one (for example when requesting Product details)
+- `currencyCode`: Currency used by the channel. Using [ISO 4217](https://pl.wikipedia.org/wiki/ISO_4217) codes is recommended, but not required
+- `hasOrders`: Returns `true` when there are already created orders using that channel. If thats the only Channel using this currency, you won't be able to remove it
+
+## Queries
+
+### Channel details
+```graphql
+channel(
+id: ID
+): Channel
+```
+
+- `id`: ID of Channel 
+
+### Channel list
+
+```graphql
+channels: [Channel!]
+```
+
+Because some of the channels may be considered non-public (for example - channel for business partners), non-staff users can not list channels. 
+
+<GraphQL
+  height={20}
+  query={`query {
+  channels{
+    name
+    currencyCode
+  }
+}`}
+/>
+
+## Mutations
+
+### Creating a Channel
+
+```graphql
+channelCreate(
+input: ChannelCreateInput!
+): ChannelCreate
+
+input ChannelCreateInput {
+  isActive: Boolean
+  name: String!
+  slug: String!
+  currencyCode: String!
+}
+
+type ChannelCreate {
+  channelErrors: [ChannelError!]!
+  channel: Channel
+}
+
+```
+
+- `channelName`: Channel name
+- `slug`: slug which will be used to identify proper channel for example in product queries
+- `isActive`: inactive channels cannot be queried by non-staff users
+- `currencyCode`: currency assigned for this channel
+
+<GraphQL
+  height={30}
+  query={`mutation {
+  channelCreate(input:{
+    name:"New Channel", 
+    slug: "new-channel", 
+    currencyCode: "USD"
+  }){
+    channel {
+      id
+      name
+    }
+    channelErrors{
+      message
+    }
+  }
+}`}
+  response={`{
+  "data": {
+    "channelCreate": {
+      "channel": {
+        "id": "Q2hhbm5lbDoz",
+        "name": "New Channel"
+      },
+      "channelErrors": []
+    }
+  }
+}`}
+  readOnly={true}
+/>
+
+### Activate / Deactivate channel
+
+If you want to make the channel unavailable for customers, you can change its status to deactivated: 
+
+```graphql
+channelActivate(id: ID!): ChannelActivate
+
+type ChannelActivate {
+  channel: Channel
+  channelErrors: [ChannelError!]!
+}
+
+channelDeactivate(id: ID!): ChannelDeactivate
+
+type ChannelDeactivate {
+  channel: Channel
+  channelErrors: [ChannelError!]!
+}
+
+```
+
+<GraphQL
+  height={30}
+  query={`mutation{
+   channelDeactivate(id: "Q2hhbm5lbDoxMQ=="){
+    channel {
+      name
+      isActive
+    }
+    channelErrors {
+      message
+    }
+  }
+}`}
+  response={`{
+  "data": {
+    "channelDeactivate": {
+      "channel": {
+        "name": "Facebook",
+        "isActive": false
+      },
+      "channelErrors": []
+    }
+  }
+}`}
+  readOnly={true}
+/>
+
+And to reverse the previous operation:
+
+<GraphQL
+  height={30}
+  query={`mutation{
+   channelActivate(id: "Q2hhbm5lbDoxMQ=="){
+    channel {
+      name
+      isActive
+    }
+    channelErrors {
+      message
+    }
+  }
+}`}
+  response={`{
+  "data": {
+    "channelDeactivate": {
+      "channel": {
+        "name": "Facebook",
+        "isActive": true
+      },
+      "channelErrors": []
+    }
+  }
+}`}
+  readOnly={true}
+/>
+
+### Channel Delete
+
+```graphql
+channelDelete(
+id: ID!
+input: ChannelDeleteInput
+): ChannelDelete
+
+input ChannelDeleteInput {
+  targetChannel: ID!
+}
+```
+
+- `id`: Channel ID which will be deleted
+- `targetChannel`: Orders created in Channel beeing deleted will be moved into `targetChannel`. Only requirements are the same `currencyCode`, also `targetChannel` different than `id` 
+
+
+## ChannelError
+
+```graphql
+type ChannelError {
+  field: String
+  message: String
+  code: ChannelErrorCode!
+}
+
+enum ChannelErrorCode {
+  ALREADY_EXISTS
+  GRAPHQL_ERROR
+  INVALID
+  NOT_FOUND
+  REQUIRED
+  UNIQUE
+  CHANNEL_TARGET_ID_MUST_BE_DIFFERENT
+  CHANNELS_CURRENCY_MUST_BE_THE_SAME
+}
+```
+
+- `ALREADY_EXISTS`: Object already exist in database
+- `GRAPHQL_ERROR`: Wrong query
+- `INVALID`: Invalid data provided
+- `NOT_FOUND`: Could not found object
+- `REQUIRED`: Missing required fields
+- `UNIQUE`: Provided value for field needs to be unique
+- `CHANNEL_TARGET_ID_MUST_BE_DIFFERENT`: You must specify other channel where existing orders will be moved
+- `CHANNELS_CURRENCY_MUST_BE_THE_SAME`: Target channel has to have the same currency 

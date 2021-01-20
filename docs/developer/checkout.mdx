@@ -11,6 +11,14 @@ The below process describes the key milestones in the checkout process flow in S
 
 The code snippets included in this section may be run in [Playground](getting-started/graphql) or your preferred HTTP client.
 
+## Multichannel
+
+During Checkout creation you will need to specify [Channel](channels.mdx). 
+- Products not available in Channel cannot be added to Checkout
+- Checkout currency is the same as Channels 
+- Users are able to create multiple Checkouts, one per Channel
+- ShippingMethos can be restricted in some Channels
+
 ## Creating a checkout session
 
 :::note
@@ -29,6 +37,7 @@ This mutation takes the following input:
 - `shippingAddress`: the shipping address (if needed).
 - `billingAddress`: the billing address.
 - `lines`: a list of checkout lines, each checkout line contains a product variant ID and its quantity.
+- `channel`: slug of chosen channel. Choosen Channel will impact which products and Shipping Methods can be added to Checkout
 
 As a result, this mutation returns the following fields:
 
@@ -53,6 +62,7 @@ mutation {
   checkoutCreate(
     input: {
       email: "customer@example.com"
+      channel: "default-channel"
       lines: [{ quantity: 1, variantId: "UHJvZHVjdFZhcmlhbnQ6Mjk3" }]
       shippingAddress: {
         firstName: "John"

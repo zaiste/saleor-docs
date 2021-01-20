@@ -75,9 +75,18 @@
       {
         "type": "category",
         "label": "API Conventions",
-        "items": ["developer/pagination", "developer/error-handling"]
+        "items": [
+          "developer/api-conventions/pagination", 
+          "developer/api-conventions/error-handling",
+          "developer/api-conventions/prices", 
+          "developer/api-conventions/translations"
+        ]
       },
+      "developer/channels",
       "developer/products",
+      "developer/categories-and-collections",
+      "developer/attributes",
+      "developer/discounts",
       "developer/checkout",
       "developer/users",
       "developer/metadata",
@@ -90,7 +99,7 @@
         "type": "category",
         "label": "Extending",
         "items": [
-          "developer/extending",
+          "developer/extending/extending",
           "developer/extending/apps",
           "developer/extending/plugins",
           "developer/extending/payment-gateways",

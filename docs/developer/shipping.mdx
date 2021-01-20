@@ -1,0 +1,71 @@
+---
+title: Shipping
+sidebar_label: Shipping
+---
+
+import GraphQL from "@site/components/GraphQL";
+
+## Introduction
+
+
+# Api Reference
+
+## Models
+
+### ShippingMethod
+```graphql
+type ShippingMethod implements Node & ObjectWithMetadata {
+  id: ID!
+  name: String!
+  minimumOrderWeight: Weight
+  maximumOrderWeight: Weight
+  maximumDeliveryDays: Int
+  minimumDeliveryDays: Int
+  privateMetadata: [MetadataItem]!
+  metadata: [MetadataItem]!
+  type: ShippingMethodTypeEnum
+  translation(languageCode: LanguageCodeEnum!): ShippingMethodTranslation
+  channelListings: [ShippingMethodChannelListing!]
+  price: Money
+  maximumOrderPrice: Money
+  minimumOrderPrice: Money
+  zipCodeRules: [ShippingMethodZipCodeRule]
+  excludedProducts(before: String, after: String, first: Int, last: Int): ProductCountableConnection
+}
+```
+
+### ShippingMethodChannelListing
+```graphql
+type ShippingMethodChannelListing implements Node {
+  id: ID!
+  channel: Channel!
+  minimumOrderPrice: Money
+  maximumOrderPrice: Money
+  price: Money
+}
+```
+
+### ShippingError
+```graphql
+type ShippingError {
+  field: String
+  message: String
+  code: ShippingErrorCode!
+  warehouses: [ID!]
+  channels: [ID!]
+}
+
+enum ShippingErrorCode {
+  ALREADY_EXISTS
+  GRAPHQL_ERROR
+  INVALID
+  MAX_LESS_THAN_MIN
+  NOT_FOUND
+  REQUIRED
+  UNIQUE
+  DUPLICATED_INPUT_ITEM
+}
+```
+
+- `MAX_LESS_THAN_MIN`: Maximum value cannot be smaller than minimum
+- `DUPLICATED_INPUT_ITEM`: One of the items in the field is duplicated

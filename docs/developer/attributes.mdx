@@ -1,0 +1,156 @@
+---
+title: Attributes
+sidebar_label: Attributes
+---
+
+import GraphQL from "@site/components/GraphQL";
+
+## Introduction
+
+Setting up attributes will allow your users to filter your products catalogue.
+
+Attributes can be used for
+- [Products](products.mdx#product) and [ProductVariants](products.mdx#productvariant)
+- Pages
+
+## Use cases
+
+1. Your store sells Mugs in many colors and sizes. This means you will need:
+- Color attribute (red, black, etc.)
+- Size attribute (Small, Big)
+
+2. Your shop has many Pages which should render with different styles. To achieve that, you can create attribute named `Template` with type `PAGE_TYPE`. As values you could set: `Support`, `Blog`, `Promos`. Then in storefront code you could load proper css template based on page `Template` value.
+
+## Permissions
+
+To edit and create Attributes user is required to have permissions:
+- `MANAGE_PRODUCT_TYPES_AND_ATTRIBUTES`
+- `MANAGE_PAGE_TYPES_AND_ATTRIBUTES`
+
+Assigning Attrubutes to Products and Pages does not require additional permission besides `MANAGE_PRODUCTS` and `MANAGE_PAGES`
+
+# Api reference
+
+## Models
+
+### Attribute
+```graphql
+type Attribute implements Node & ObjectWithMetadata {
+  id: ID!
+  productTypes(before: String, after: String, first: Int, last: Int): ProductTypeCountableConnection!
+  productVariantTypes(before: String, after: String, first: Int, last: Int): ProductTypeCountableConnection!
+  privateMetadata: [MetadataItem]!
+  metadata: [MetadataItem]!
+  inputType: AttributeInputTypeEnum
+  name: String
+  slug: String
+  type: AttributeTypeEnum
+  values: [AttributeValue]
+  valueRequired: Boolean!
+  visibleInStorefront: Boolean!
+  filterableInStorefront: Boolean!
+  filterableInDashboard: Boolean!
+  availableInGrid: Boolean!
+  translation(languageCode: LanguageCodeEnum!): AttributeTranslation
+  storefrontSearchPosition: Int!
+}
+```
+
+- `id`: Unique object ID
+- `productTypes`: List of Product Types which use this Attribute as Product Attribute
+- `productVariantTypes`: List of Product Types which use this Attribute as Variant Attribute
+- `privateMetadata`: List of private metadata
+- `metadata`: List of public metadata
+- `inputType`: Used to distinct which widget should be displayed oon the frontend (number, text, selection)
+- `name`: Object name displayed to the user
+- `slug`: Unique slug
+- `type`: Type of object associated with atrribute
+- `values`: List of possible values which can be assigned to attribute 
+- `valueRequired`: If true, value of attribute has to be assigned
+- `visibleInStorefront`: If true, attribute will be visible instorefront
+- `filterableInStorefront`: If true, storefront users will be able to filter products by this attribute
+- `filterableInDashboard`: If true, dashboard users will be able to filter products by this attribute
+- `availableInGrid`
+- `translation(languageCode: LanguageCodeEnum!)`: Translated fields of object
+- `storefrontSearchPosition`: Index which will be used to order list of filters
+
+### AttributeTypeEnum
+Determines which object Attribute will be used with.
+
+```graphql
+enum AttributeTypeEnum {
+  PRODUCT_TYPE
+  PAGE_TYPE
+}
+```
+
+- `PRODUCT_TYPE`: Attributes used for Products
+- `PAGE_TYPE`: Attributes used for Pages
+
+### AttributeTranslation
+Allows for Attribute internationalization.
+
+```graphql
+type AttributeTranslation implements Node {
+  id: ID!
+  name: String!
+  language: LanguageDisplay!
+}
+```
+
+- `id`:
+- `name`: Translated Attribute name
+- `language`:
+
+### AttributeValue
+Object for keeping Attrubute value.
+
+```graphql
+type AttributeValue implements Node {
+  id: ID!
+  name: String
+  slug: String
+  translation(languageCode: LanguageCodeEnum!): AttributeValueTranslation
+  inputType: AttributeInputTypeEnum
+  file: File
+}
+```
+
+- `id`: Unique object ID
+- `name`: Value name
+- `slug`: Unique slug
+- `translation(languageCode: LanguageCodeEnum!)`: Translation object in requested language
+- `inputType`: Controls which widget should be displayed in frontend
+- `file`: File object
+
+### AttributeValueType
+Determines type of AttributeValue.
+
+```graphql
+enum AttributeValueType {
+  COLOR
+  GRADIENT
+  URL
+  STRING
+}
+```
+
+- `COLOR`: Attribute value for keeping color
+- `GRADIENT`: Attribute value for keeping color gradient
+- `URL`: Attribute value for keeping URL
+- `STRING`: Plaintext Attribute value
+
+### AttributeValueTranslation
+Allows for AttributeValue internationalization.
+
+```graphql
+type AttributeValueTranslation implements Node {
+  id: ID!
+  name: String!
+  language: LanguageDisplay!
+}
+```
+
+- `id`: Unique object ID
+- `name`: Translated AttributeValue name
+- `language`: 

@@ -1,0 +1,193 @@
+---
+title: Discounts
+sidebar_label: Discounts
+---
+
+import GraphQL from "@site/components/GraphQL";
+
+## Introduction
+
+There are 2 types of discounts which can be created in Saleor. __Sale__ is a discount which is available for all users visiting your store. You can restrict it to for example products or collections, but you can not choose which users will recieve it. Second type is the __Voucher__ which is applicable during checkout after entering Promo Code. Only users who know Voucher code will be able to use that discount.
+
+# Api Reference
+
+# Models
+
+### Sale
+
+```graphql
+type Sale implements Node {
+  id: ID!
+  name: String!
+  type: SaleType!
+  startDate: DateTime!
+  endDate: DateTime
+  categories(before: String, after: String, first: Int, last: Int): CategoryCountableConnection
+  collections(before: String, after: String, first: Int, last: Int): CollectionCountableConnection
+  products(before: String, after: String, first: Int, last: Int): ProductCountableConnection
+  translation(languageCode: LanguageCodeEnum!): SaleTranslation
+  channelListings: [SaleChannelListing!]
+  discountValue: Float
+  currency: String
+}
+```
+
+- `id`: Unique object ID
+- `name`: Sale name
+- `type`: SaleType: Fixed (10$ off) or percentage (20% off) 
+- `startDate`: Sale will be aplicable from this date
+- `endDate`: Sale wont be aplicable after this date
+- `categories`: List of Categories aplicable for this sale
+- `collections`: List of Collections aplicable for this sale
+- `products`: List of Products aplicable for this sale
+- `translation`: Translation object
+- `channelListings`: List of [SaleChannelListing](discounts.mdx#salechannellisting) objects
+- `discountValue`: Float value. For percentage should be in range 0-100, for fixed >0
+- `currency`: Sale currency (needed for FIXED Sales)
+
+### SaleType
+```graphql
+enum SaleType {
+  FIXED
+  PERCENTAGE
+}
+```
+
+- `FIXED`: Fixed price discount, for example $10 off
+- `PERCENTAGE`: Percentage discountm, for example 10% off
+
+
+### SaleTranslation
+```graphql
+type SaleTranslation implements Node {
+  id: ID!
+  name: String
+  language: LanguageDisplay!
+}
+```
+- `id`: Unique object ID
+- `name`: Translated Sale name
+- `language`: Language of translation
+
+### SaleChannelListing
+Describes values depending on chosen channel.
+
+```graphql
+type SaleChannelListing implements Node {
+  id: ID!
+  channel: Channel!
+  discountValue: Float!
+  currency: String!
+}
+```
+
+- `id`: Unique object ID
+- `channel`: Channel object
+- `discountValue`: Discount value
+- `currency`: Discount currency
+
+
+### Voucher
+
+```graphql
+type Voucher implements Node {
+  id: ID!
+  name: String
+  type: VoucherTypeEnum!
+  code: String!
+  usageLimit: Int
+  used: Int!
+  startDate: DateTime!
+  endDate: DateTime
+  applyOncePerOrder: Boolean!
+  applyOncePerCustomer: Boolean!
+  discountValueType: DiscountValueTypeEnum!
+  minCheckoutItemsQuantity: Int
+  categories(before: String, after: String, first: Int, last: Int): CategoryCountableConnection
+  collections(before: String, after: String, first: Int, last: Int): CollectionCountableConnection
+  products(before: String, after: String, first: Int, last: Int): ProductCountableConnection
+  countries: [CountryDisplay]
+  translation(languageCode: LanguageCodeEnum!): VoucherTranslation
+  discountValue: Float
+  currency: String
+  minSpent: Money
+  channelListings: [VoucherChannelListing!]
+}
+```
+
+- `id`: Unique object ID
+- `name`: Voucher name
+- `type`: Voucher type [VoucherTypeEnum](discounts.mdx#vouchertypeenum)
+- `code`: Code which user has to type in cart section to activate voucher
+- `usageLimit`: How many times voucher can be applied to order. Number >0
+- `used`: How many times voucher was applied
+- `startDate`: Voucher will be aplicable from this date
+- `endDate`: After this date Voucher will not be aplicable
+- `applyOncePerOrder`: When true, discount will be applied only on one of the discounted products
+- `applyOncePerCustomer`: When true, single user will not be able to use this Voucher more than once
+- `discountValueType`: [DiscountValueTypeEnum](discounts.mdx#discountvaluetypeenum) of Voucher
+- `minCheckoutItemsQuantity`: Whats the minimal amount of products to assign discount. For example "Buy 2 Shirts and get $10 off"
+- `categories`: List of Categories included in discount
+- `collections`: List of Collections included in discount
+- `products`: List of products included in discount
+- `translation`: VoucherTranslation object
+- `discountValue`: Value of voucher
+- `currency`: Currency of voucher
+- `minSpent`: Minimum Order value to activate the voucher
+- `channelListings`: List of [VoucherChannelListing](discounts.mdx#voucherchannellisting) objects
+
+### VoucherTypeEnum
+```graphql
+enum VoucherTypeEnum {
+  SHIPPING
+  ENTIRE_ORDER
+  SPECIFIC_PRODUCT
+}
+```
+
+- `SHIPPING`: Voucher will be applied only on shipping price
+- `ENTIRE_ORDER`: Voucher will be applied on order total
+- `SPECIFIC_PRODUCT`: Voucher will be applied only on selected Products
+
+### 
+```graphql
+enum DiscountValueTypeEnum {
+  FIXED
+  PERCENTAGE
+}
+```
+
+- `FIXED`: Fixed price discount, for example $10 off
+- `PERCENTAGE`: Percentage discountm, for example 10% off
+
+### VoucherChannelListing
+
+```graphq
+type VoucherChannelListing implements Node {
+  id: ID!
+  channel: Channel!
+  discountValue: Float!
+  currency: String!
+  minSpent: Money
+}
+```
+
+- `id`: Unique object ID
+- `channel`: Channel object
+- `discountValue`: Voucher value
+- `currency`: Currency of voucher
+- `minSpent`: Minimum Order value for Voucher to be applied 
+
+### VoucherTranslation
+
+```graphql
+type VoucherTranslation implements Node {
+  id: ID!
+  name: String
+  language: LanguageDisplay!
+}
+```
+
+- `id`: Unique object ID
+- `name`: Translated Voucher name
+- `language`: Translation language

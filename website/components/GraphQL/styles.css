@@ -30,6 +30,10 @@
   font-size: 18px;
 }
 
+.read-only .execute-button-wrap {
+  display: none;
+}
+
 .graphiql-container .title em {
   font-size: 2em;
 }

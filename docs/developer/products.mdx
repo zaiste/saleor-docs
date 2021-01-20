@@ -11,17 +11,63 @@ This guide describes how to obtain products from the Saleor GraphQL API.
 
 You can either retrieve a single product or a list of products. You may require a list of products in many situations, for example, when you need to simply display the catalog in your storefront, or to provide a third party service with a list of products available in your store.
 
+## Glossary
+
+__Attribute__: value which describes product. For example: Color, Size, Package type (bulk, separate)
+
+__Product type__: set of product and variants attributes. Think of it as of template of products
+
+__Product__: Set of variants with common description and name. These are displayed separatly on product lists like category view
+
+__Product variant__: Variant which can be bought. Every variant has unique SKU number and set of attributes (for example size)
+
+## Use case
+
+Your store sells _Mugs_. Users can browse catalogue and choose many designs. Every _mug_ can have multiple configurations:
+- multiple colors (red, black, etc.)
+- two sizes (Small, Big)
+- two different production types (handmade, machined). Designs are only available in one production type
+
+In such case you would like to create Product Type _Mug_ with attributes:
+- product attributes
+  - production type
+- variant attributes:
+  - color
+  - size
+
+With such type you will be aple to show separate listings for products on your _Mugs_ category page:
+- "Wavy Mug" which is hand made
+- "Standard Mug" which is machined
+
+On product details page user can choose different colors and sizes and buy exact model they need. For example "Big Red Standard Mug".
+
+Click [here](attributes.mdx) to learn more about Attributes.
+
+## Multichannel
+
+:::note Channel parameter
+If your shop has only one channel, `channel` variable in product queries can be skipped. Otherwise, channel slug has to be specified whed requesting product list as unregistered user.
+:::
+
+With [Channels](channels.mdx), you can set up your products depending on requested channel:
+- availability
+- publication date and status
+- visibility in listings
+- availability for purchase
+- prices and currencies
+
+Per-channel settings are kept in channel listings
+
 ## Retrieving a list of products
 
-To fetch a product list, you need to run the `products` query. The `products` field is a paginated collection, see [Pagination](pagination.mdx) for more information.
-
+To fetch a product list, you need to run the `products` query. The `products` field is a paginated collection, see [Pagination](api-conventions/pagination.mdx) for more information.
 
 Let's take a look at an example query to fetch a list of products:
 
 <GraphQL
   height={20}
   query={`{
-  products(first: 2) {
+  products(first: 2, channel: "default-channel") {
     edges {
       node {
         id
@@ -55,9 +101,13 @@ The `products` query gives the ability to filter the results. Use the optional `
 Here is an example query that looks for the first 3 products containing the term "juice" in the title or description:
 
 <GraphQL
-  height={20}
+  height={26}
   query={`{
-  products(first: 3, filter: { search: "juice" }) {
+  products(
+    first: 3, 
+    channel: "default-channel", 
+    filter: { search: "juice" }
+  ) {
     edges {
       node {
         name
@@ -87,18 +137,27 @@ In `products` you can also sort the results using two `sortBy` arguments:
 This example shows how to sort the products list by the minimal variant price, lowest to highest:
 
 <GraphQL
-  height={25}
+  height={45}
   query={`{
   products(
     first: 2
-    sortBy: { field: MINIMAL_PRICE, direction: ASC }
+    sortBy: { 
+      field: MINIMAL_PRICE, 
+      direction: ASC, 
+      channel: "default-channel" }
   ) {
     edges {
       node {
         name
-        minimalVariantPrice {
-          amount
-          currency
+        pricing {
+          priceRange {
+            start {
+              gross {
+                amount
+                currency
+              }
+            }
+          }
         }
       }
     }
@@ -131,7 +190,10 @@ To obtain product variants, query the `variants` field on the `Product` type:
 <GraphQL
   height={25}
   query={`{
-  products(first: 1) {
+  products(
+    first: 1, 
+    channel: "default-channel"
+  ) {
     edges {
       node {
         id
@@ -153,7 +215,39 @@ Like products, here we're asking for two fields from each variant:
 
 ## Pricing
 
-Use the `pricing` field of products and variants to obtain pricing information.
+- To learn more about `Money` types check out [Prices](api-conventions/prices.mdx) section. 
+
+Pricing of a product is depending on chosen channel.
+
+<GraphQL
+  height={25}
+  query={`{
+  products(
+    first: 1, 
+    channel: "default-channel"
+  ) {
+    edges {
+      node {
+        id
+        name
+        variants {
+          id
+          name
+          pricing {
+              price {
+                gross{
+                amount
+                currency  
+                }
+              }
+          }
+        }
+      }
+    }
+  }
+}`}
+/>
+
 
 Here are the available fields for product pricing:
 
@@ -178,8 +272,6 @@ type VariantPricingInfo {
 ```
 
 The main difference is that products don't have a price point, instead they offer a price range that includes all of their variant prices.
-
-Here are the money types returned by the above:
 
 ```graphql
 type TaxedMoneyRange {
@@ -207,6 +299,8 @@ type Money {
 }
 ```
 
+More info about Prices can be found [here](api-conventions/prices.mdx).
+
 ## Images
 
 The `Product` type contains two fields that refer to its images:
@@ -223,7 +317,10 @@ Here's a query that asks for both the thumbnail and all images of the first prod
 <GraphQL
   height={30}
   query={`{
-  products(first: 1) {
+  products(
+    first: 1, 
+    channel: "default-channel"
+  ) {
     edges {
       node {
         id
@@ -285,3 +382,168 @@ Here's a more complex GraphQL query that combines all of the above information:
   }
 }
 ```
+
+
+# Api Reference
+
+## Models
+
+### ProductType
+```graphql
+type ProductType implements Node & ObjectWithMetadata {
+  id: ID!
+  name: String!
+  slug: String!
+  hasVariants: Boolean!
+  isShippingRequired: Boolean!
+  isDigital: Boolean!
+  weight: Weight
+  privateMetadata: [MetadataItem]!
+  metadata: [MetadataItem]!
+  taxRate: TaxRateType
+  taxType: TaxType
+  variantAttributes(variantSelection: VariantAttributeScope): [Attribute]
+  productAttributes: [Attribute]
+  availableAttributes(filter: AttributeFilterInput, before: String, after: String, first: Int, last: Int): AttributeCountableConnection
+}
+```
+
+- `id`: Unique object ID
+- `name`: ProductType name
+- `slug`: Unique object slug
+- `hasVariants`: Controls, if associated products have more than one variant
+- `isShippingRequired`: Controls, if user should choose Shipping Method when adding product with this type to the cart
+- `isDigital`: Set to true, if product is digital only (can be used for e-books)
+- `weight`: Weight
+- `privateMetadata`: Private metadata 
+- `metadata`: Public metadata
+- `taxRate`: Rate of taxes
+- `taxType`: TaxType object which contain Tax Code
+- `variantAttributes(variantSelection`: VariantAttributeScope)`: List of Attributes which can be assigned to Variants 
+- `productAttributes`: List of Attributes which can be assigned to Products
+- `availableAttributes`: List of available Attributes 
+
+### Product
+```graphql
+type Product implements Node & ObjectWithMetadata {
+  id: ID!
+  seoTitle: String
+  seoDescription: String
+  name: String!
+  description: String!
+  descriptionJson: JSONString!
+  productType: ProductType!
+  slug: String!
+  category: Category
+  updatedAt: DateTime
+  chargeTaxes: Boolean!
+  weight: Weight
+  defaultVariant: ProductVariant
+  rating: Float
+  privateMetadata: [MetadataItem]!
+  metadata: [MetadataItem]!
+  thumbnail(size: Int): Image
+  pricing: ProductPricingInfo
+  isAvailable: Boolean
+  taxType: TaxType
+  attributes: [SelectedAttribute!]!
+  channelListings: [ProductChannelListing!]
+  imageById(id: ID): ProductImage
+  variants: [ProductVariant]
+  images: [ProductImage]
+  collections: [Collection]
+  translation(languageCode: LanguageCodeEnum!): ProductTranslation
+  availableForPurchase: Date
+  isAvailableForPurchase: Boolean
+}
+```
+
+-  `id`: Unique object ID
+-  `seoTitle`: Title visible in search results and social media widgets
+-  `seoDescription`: Description visible in search results and social media widgets
+-  `name`: Name of product
+-  `description`: Description of product
+-  `descriptionJson`: JSON formatted rich text description. Saleor frontends use for that EditorJS
+-  `productType`: ProductType object
+-  `slug`: Unique product slug
+-  `category`: Category object
+-  `updatedAt`: Date of last update
+-  `chargeTaxes`: Flag which controls if taxes should be applie
+-  `weight`: Weight of product
+-  `defaultVariant`: ProductVariant which is displayed as main variant
+-  `rating`: Float field where rating can be assigned
+-  `privateMetadata`: Private metadata
+-  `metadata`: Public metadata
+-  `thumbnail`: Image object for product thumbnail
+-  `pricing`: Product Pricing which is calculated based on its variants
+-  `isAvailable`: Flag which controls if product is displayed in storefront
+-  `attributes`: List of product [Attributes](attributes)
+-  `taxType`: TaxType object which contain Tax Code
+-  `channelListings`: List of ChannelListings
+-  `imageById`:
+-  `variants`: List of ProductVariants
+-  `images`: List of product Images
+-  `collections`: List of 
+-  `translation(languageCode`:
+-  `availableForPurchase`:
+-  `isAvailableForPurchase`:
+
+### ProductChannelListing
+```graphql
+type ProductChannelListing implements Node {
+  id: ID!
+  publicationDate: Date
+  isPublished: Boolean!
+  channel: Channel!
+  visibleInListings: Boolean!
+  availableForPurchase: Date
+  discountedPrice: Money
+  purchaseCost: MoneyRange
+  margin: Margin
+  isAvailableForPurchase: Boolean
+  pricing: ProductPricingInfo
+}
+```
+
+### ProductVariant
+```graphql
+type ProductVariant implements Node & ObjectWithMetadata {
+  id: ID!
+  name: String!
+  sku: String!
+  product: Product!
+  trackInventory: Boolean!
+  weight: Weight
+  privateMetadata: [MetadataItem]!
+  metadata: [MetadataItem]!
+  channelListings: [ProductVariantChannelListing!]
+  pricing: VariantPricingInfo
+  attributes(variantSelection: VariantAttributeScope): [SelectedAttribute!]!
+  costPrice: Money
+  margin: Int
+  quantityOrdered: Int
+  revenue(period: ReportingPeriod): TaxedMoney
+  images: [ProductImage]
+  translation(languageCode: LanguageCodeEnum!): ProductVariantTranslation
+  digitalContent: DigitalContent
+  stocks(countryCode: CountryCode): [Stock]
+  quantityAvailable(countryCode: CountryCode): Int!
+}
+```
+
+### ProductVariantChannelListing
+```graphql
+type ProductVariantChannelListing implements Node {
+  id: ID!
+  channel: Channel!
+  price: Money
+  costPrice: Money
+  margin: Int
+}
+```
+
+
+## Queries
+
+
+## Mutations
