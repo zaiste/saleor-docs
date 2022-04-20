@@ -11,6 +11,10 @@ enum WebhookEventTypeAsyncEnum {
   CATEGORY_CREATED
   CATEGORY_UPDATED
   CATEGORY_DELETED
+  CHANNEL_CREATED
+  CHANNEL_UPDATED
+  CHANNEL_DELETED
+  CHANNEL_STATUS_CHANGED
   ORDER_CREATED
   ORDER_CONFIRMED
   ORDER_FULLY_PAID
@@ -75,6 +79,22 @@ A category is updated.
 #### `CATEGORY_DELETED`
 
 A category is deleted.
+
+#### `CHANNEL_CREATED`
+
+A new channel is created.
+
+#### `CHANNEL_UPDATED`
+
+A channel is updated.
+
+#### `CHANNEL_DELETED`
+
+A channel is deleted.
+
+#### `CHANNEL_STATUS_CHANGED`
+
+A channel status is changed.
 
 #### `ORDER_CREATED`
 
